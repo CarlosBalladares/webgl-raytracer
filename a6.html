@@ -196,6 +196,18 @@ vec3 bgColor(ray myRay)
     K=vec3(1.0,1.0,1.0);            // white square
 
   vec3 L = normalize(lightPosition-P);
+
+  ray shadowRay;
+  shadowRay.origin= P;
+  shadowRay.direction = L;
+  float nearest_t = rayT(myRay);                  // find closest object
+  // float kSpec = nearestSphere.mtrl.kSpec;         // keep these lines for use in step (7)
+  // float kLocal = nearestSphere.mtrl.kLocal;       // keep these lines for use in step (7)
+  if (nearest_t < largeT) {
+    K = vec3(0.0,0.0,0.0);
+  }
+
+
   return max(0.0, dot(N, L)) * K;
 }
 
@@ -239,7 +251,7 @@ vec3 rayCast(ray myRay)
     }
 
   }
-  return hit? colour:bgColor(myRay);
+  return (hit? colour:bgColor(myRay));
 }
 
 void main()
