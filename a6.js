@@ -140,11 +140,11 @@ function update() {
   raytracerMaterial.uniforms.lightPosition.value = light.position;
   raytracerMaterial.uniforms.lightPosition.value.needsUpdate = true;
    var i = 0.5+0.5*Math.sin(Date.now()*0.001*5.0);
-  // raytracerMaterial.uniforms.myFloat1.value = i;
-  // raytracerMaterial.uniforms.myFloat1.needsUpdate = true;
-  // var i2 = 0.5+0.5*Math.cos(Date.now()*0.001*5.0);
-  // raytracerMaterial.uniforms.myFloat2.value = i2;
-  // raytracerMaterial.uniforms.myFloat2.needsUpdate = true;
+  raytracerMaterial.uniforms.myFloat1.value = i;
+  raytracerMaterial.uniforms.myFloat1.needsUpdate = true;
+  var i2 = 0.5+0.5*Math.cos(Date.now()*0.001*5.0);
+  raytracerMaterial.uniforms.myFloat2.value = i2;
+  raytracerMaterial.uniforms.myFloat2.needsUpdate = true;
    // raytracerMaterial.uniforms.light_color.value = new THREE.Vector3(i2+0.5, i2+0.5, i2+0.5);
    // raytracerMaterial.uniforms.light_color.needsUpdate = true;
 
