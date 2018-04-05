@@ -197,12 +197,11 @@ vec3 bgColor(ray myRay)
 
   vec3 L = normalize(lightPosition-P);
 
+  // Shadow Ray on checkerboard
   ray shadowRay;
   shadowRay.origin= P;
   shadowRay.direction = L;
   float nearest_t = rayT(myRay);                  // find closest object
-  // float kSpec = nearestSphere.mtrl.kSpec;         // keep these lines for use in step (7)
-  // float kLocal = nearestSphere.mtrl.kLocal;       // keep these lines for use in step (7)
   if (nearest_t < largeT) {
     K = vec3(0.0,0.0,0.0);
   }
@@ -221,6 +220,7 @@ vec3 rayCast(ray myRay)
   float bounces= 0.0;
   float kSpec_acc= 1.0;
   bool hit = false;
+  ray reflectedRay;
   for(int i =0; i<=5;i++){
 
     float nearest_t = rayT(myRay);                  // find closest object
@@ -233,11 +233,7 @@ vec3 rayCast(ray myRay)
       vec3 I = normalize(P- lightPosition);
       vec3 K = nearestSphere.mtrl.color;
 
-
-      vec3 localColor = localShade(P,N,I,nearestSphere.mtrl.color);     // local shading
-
-
-      ray reflectedRay;
+      vec3 localColor = localShade(P,N,I,K);     // local shading
       reflectedRay.origin =P;
       reflectedRay.direction =reflect(normalize(myRay.direction), N);
 
