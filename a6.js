@@ -78,7 +78,8 @@ var raytracerMaterial = new THREE.ShaderMaterial( {
            resolution: {value: new THREE.Vector2(window.innerWidth, window.innerHeight)},
            myFloat1: {value: 0.5},
            myFloat2: {value: 0.5},
-           light_color: {value: new THREE.Vector3(1.0, 1.0, 1.0)}
+           light_color: {value: new THREE.Vector3(1.0, 1.0, 1.0)},
+           matrixWorld:{value: new THREE.Matrix4()}
         },
   vertexShader: document.getElementById( 'raytracerVertShader' ).textContent,
   fragmentShader: document.getElementById( 'raytracerFragShader' ).textContent
@@ -138,7 +139,7 @@ function update() {
   raytracerScreen.lookAt(camera.position);
   raytracerMaterial.uniforms.lightPosition.value = light.position;
   raytracerMaterial.uniforms.lightPosition.value.needsUpdate = true;
-  // var i = 0.5+0.5*Math.sin(Date.now()*0.001*5.0);
+   var i = 0.5+0.5*Math.sin(Date.now()*0.001*5.0);
   // raytracerMaterial.uniforms.myFloat1.value = i;
   // raytracerMaterial.uniforms.myFloat1.needsUpdate = true;
   // var i2 = 0.5+0.5*Math.cos(Date.now()*0.001*5.0);
@@ -146,6 +147,10 @@ function update() {
   // raytracerMaterial.uniforms.myFloat2.needsUpdate = true;
    // raytracerMaterial.uniforms.light_color.value = new THREE.Vector3(i2+0.5, i2+0.5, i2+0.5);
    // raytracerMaterial.uniforms.light_color.needsUpdate = true;
+
+   raytracerMaterial.uniforms.matrixWorld.value = camera.matrixWorld;
+ raytracerMaterial.uniforms.matrixWorld.update = true;
+  //sphere_med.position.set(6.0,13.0,i);
   renderer.render(scene, camera);
   //console.log(camera.position);
 }
