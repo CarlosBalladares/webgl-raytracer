@@ -255,7 +255,7 @@ vec3 rayCast(ray myRay)
   ray initRay = myRay;
 
 
-  for(int i =0; i<=4; i++){
+  for(int i =0; i<=5; i++){
 
     float nearest_t = rayT(myRay);                  // find closest object
     float kSpec = nearestSphere.mtrl.kSpec;         // keep these lines for use in step (7)
@@ -294,6 +294,7 @@ vec3 rayCast(ray myRay)
       myRay= reflectedRay;
       //initRay= reflectedRay;
     }else{
+
       colour+= kSpec_acc*kLocal*bgColor(myRay);       // return checkeboard texture
       break;
     }
@@ -313,7 +314,7 @@ vec3 rayCast(ray myRay)
 
         ray refray;
         refray.origin =first_P;
-        refray.direction= refract(normalize(initRay.direction), first_N, 1.0/1.5);
+        refray.direction= refract(normalize(initRay.direction), first_N, 1.0/1.7);
 
         float refracted_t = rayT(refray);
         vec3 refr_colour= vec3(0.0, 0.0, 0.0);
