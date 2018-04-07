@@ -77,7 +77,8 @@ var raytracerMaterial = new THREE.ShaderMaterial( {
            lightPosition: {value: light.position},
            resolution: {value: new THREE.Vector2(window.innerWidth, window.innerHeight)},
            myFloat1: {value: 0.5},
-           myFloat2: {value: 0.5},
+
+           myFloat2: {value: 0.5},show_refraction: {value: 0.0},
            light_color: {value: new THREE.Vector3(1.0, 1.0, 1.0)},
            matrixWorld:{value: new THREE.Matrix4()}
         },
@@ -116,6 +117,9 @@ scene.add(raytracerScreen);
 //  LISTEN TO KEYBOARD                        //
 ////////////////////////////////////////////////
 
+var show_refraction=0.0;
+var flash_lights=false;
+
 var keyboard = new THREEx.KeyboardState();
 function checkKeyboard() {
   if (keyboard.pressed("W")) {
@@ -127,29 +131,47 @@ function checkKeyboard() {
     light.position.x -= 0.1;
   else if (keyboard.pressed("D"))
     light.position.x += 0.1;
+
+  if (keyboard.pressed("R")) {
+      console.log('R pressed');
+      raytracerMaterial.uniforms.show_refraction.value +=1.0;
+      raytracerMaterial.uniforms.show_refraction.value %=2.0;
+
+  }
+
+  if (keyboard.pressed("T")) {
+      console.log('T pressed');
+      flash_lights=!flash_lights;
+
+  }
 }
 
 ////////////////////////////////////////////////
 //  UPDATE CALLBACK                           //
 ////////////////////////////////////////////////
-
+var tick =0;
 function update() {
   checkKeyboard();
   requestAnimationFrame(update);
+  tick = ((tick+1)%100);
+
+
   raytracerScreen.lookAt(camera.position);
   raytracerMaterial.uniforms.lightPosition.value = light.position;
   raytracerMaterial.uniforms.lightPosition.value.needsUpdate = true;
    var i = 0.5+0.5*Math.sin(Date.now()*0.001*5.0);
   raytracerMaterial.uniforms.myFloat1.value = i;
   raytracerMaterial.uniforms.myFloat1.needsUpdate = true;
+  raytracerMaterial.uniforms.show_refraction.needsUpdate = true;
   var i2 = 0.5+0.5*Math.cos(Date.now()*0.001*5.0);
   raytracerMaterial.uniforms.myFloat2.value = i2;
   raytracerMaterial.uniforms.myFloat2.needsUpdate = true;
-   // raytracerMaterial.uniforms.light_color.value = new THREE.Vector3(i2+0.5, i2+0.5, i2+0.5);
-   // raytracerMaterial.uniforms.light_color.needsUpdate = true;
-
-   raytracerMaterial.uniforms.matrixWorld.value = camera.matrixWorld;
- raytracerMaterial.uniforms.matrixWorld.update = true;
+  if (flash_lights==true){
+    raytracerMaterial.uniforms.light_color.value = new THREE.Vector3(i2+0.5, i2+0.5, i2+0.5);
+    raytracerMaterial.uniforms.light_color.needsUpdate = true;
+  }
+  raytracerMaterial.uniforms.matrixWorld.value = camera.matrixWorld;
+  raytracerMaterial.uniforms.matrixWorld.update = true;
   //sphere_med.position.set(6.0,13.0,i);
   renderer.render(scene, camera);
   //console.log(camera.position);

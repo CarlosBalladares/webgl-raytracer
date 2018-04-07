@@ -44,6 +44,7 @@ uniform vec3 lightPosition;
 uniform vec3 light_color;
 uniform float myFloat1;
 uniform float myFloat2;
+uniform float show_refraction;
 
 const int n_spheres = 3;
 float epsilon = 0.00001;
@@ -66,6 +67,7 @@ struct ray {
 struct material {
   float kLocal;
   float kSpec;
+  float ior;
   vec3 color;
 };
 
@@ -73,6 +75,7 @@ struct sphere {
   material mtrl;
   vec3 position;
   float radius;
+  bool is_refractive;
 };
 
 struct plane {
@@ -81,6 +84,12 @@ struct plane {
   float width;
   float height;
 };
+struct node {
+  material mtrl;
+  vec3 incident;
+  vec3 normal;
+};
+
 
 sphere nearestSphere;
 sphere scene_spheres[n_spheres];
@@ -107,6 +116,21 @@ float sphere_intersect(ray myRay, sphere sphr) {
     if (tmin<=0.0+epsilon) return -1.0;
     return (tmin);              // return smallest positive value
   }
+}
+
+float getkspec(vec3 I, vec3 N, float etat, float etai){
+
+  float cosi = dot(normalize(I), normalize(N));
+  float temp;
+  if(cosi > 0.0)  {temp = etat; etat = etai; etai = temp; }
+  float sint = etai / etat * sqrt(max(0.0, 1.0 - cosi * cosi));
+  if (sint >= 1.0) return 1.0;
+
+  float cost = sqrt(max(0.0, 1.0 - sint * sint));
+  float Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
+  float Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
+  return (Rs * Rs + Rp * Rp) / 2.0;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -136,7 +160,9 @@ float rayT(ray myRay)
 vec3 localShade(vec3 P, vec3 N, vec3 I, vec3 surfColor) {
   ray shadowRay;
   // Compute L a normalized vector pointing to the light source
-  vec3 L = -I;
+  //vec3 L = -I;
+  vec3 L = normalize(lightPosition-P);
+
   // Diffuse N*L
   float i = max(0.0, dot(N, L));
   // Shadow ray from P intersection to the lightsource
@@ -154,7 +180,7 @@ vec3 localShade(vec3 P, vec3 N, vec3 I, vec3 surfColor) {
   vec3 diffuse_term = (light_color*surfColor)*i;
 
   // Compute specular
-  vec3 V = normalize(-P);
+  vec3 V = normalize(I-P); // viewing vector is Origin - P
   float d = 2.0*i;
   vec3 R = d*N-L;
   float n = 100.0;
@@ -219,35 +245,95 @@ vec3 rayCast(ray myRay)
   vec3 colour=vec3(0.0, 0.0, 0.0);
   float bounces= 0.0;
   float kSpec_acc= 1.0;
+  float kRefr_acc= 0.0;
+  float kReff = 1.0;
+
   bool hit = false;
+  bool begin = true;
   ray reflectedRay;
-  for(int i =0; i<=5;i++){
+  ray refractedRay;
+  ray initRay = myRay;
+
+
+  for(int i =0; i<=4; i++){
 
     float nearest_t = rayT(myRay);                  // find closest object
     float kSpec = nearestSphere.mtrl.kSpec;         // keep these lines for use in step (7)
     float kLocal = nearestSphere.mtrl.kLocal;       // keep these lines for use in step (7)
+    float ior = nearestSphere.mtrl.ior;
     if (nearest_t < largeT) {       // hit an object?
       hit = true;
       vec3 P = (myRay.origin)+myRay.direction*nearest_t;
       vec3 N = normalize(P-nearestSphere.position);
-      vec3 I = normalize(P- lightPosition);
+      vec3 I = normalize(myRay.direction);
       vec3 K = nearestSphere.mtrl.color;
 
       vec3 localColor = localShade(P,N,I,K);     // local shading
+      vec3 localColor_r = vec3(0.0, 0.0, 0.0);
+      float kLocalr = 0.0;
+      float kSpecr;
+
+
       reflectedRay.origin =P;
       reflectedRay.direction =reflect(normalize(myRay.direction), N);
 
+      float n1 = 1.0;
+      float n2 = 1.5;
+
+      // refractedRay.origin = P;
+      // refractedRay.direction= refract(normalize(myRay.direction), N, n1/n2);
+      // float refracted_t = rayT(refractedRay);
+      // if (nearest_t >= largeT) {
+      //   colour+=bgColor(refractedRay);
+      // }
+
+
       colour+= kSpec_acc*kLocal*localColor;
       kSpec_acc *= kSpec;
+      initRay= myRay;
       myRay= reflectedRay;
-      // return localColor;
+      //initRay= reflectedRay;
     }else{
       colour+= kSpec_acc*kLocal*bgColor(myRay);       // return checkeboard texture
       break;
     }
 
-  }
-  return (hit? colour:bgColor(myRay));
+    //float init
+    float first_t = rayT(initRay);
+    float check_mat= nearestSphere.mtrl.kSpec;
+    if(show_refraction==1.0){
+
+      if(hit){
+
+        vec3 first_P = (initRay.origin)+initRay.direction*first_t;
+        vec3 first_N = normalize(first_P-nearestSphere.position);
+        vec3 first_I = normalize(initRay.direction);
+        vec3 first_K = nearestSphere.mtrl.color;
+        float hit_kpec= nearestSphere.mtrl.kSpec;
+
+        ray refray;
+        refray.origin =first_P;
+        refray.direction= refract(normalize(initRay.direction), first_N, 1.0/1.5);
+
+        float refracted_t = rayT(refray);
+        vec3 refr_colour= vec3(0.0, 0.0, 0.0);
+        if(refracted_t < largeT){
+          // first_P = (refray.origin)+refray.direction*refracted_t;
+          // first_N = normalize(first_P-nearestSphere.position);
+          // first_I = normalize(refracted_t.direction);
+          // first_K = nearestSphere.mtrl.color;
+          vec3 contribution = vec3(1.0, 1.0, 0.0)*abs(1.0-hit_kpec);
+          colour+=contribution;
+
+        }else{
+          colour+=bgColor(refray)*abs(1.0-hit_kpec);
+
+        }
+      }
+    }
+
+    }
+  return ( hit? colour : bgColor(myRay) );
 }
 
 void main()
@@ -256,26 +342,39 @@ void main()
   // INIT SPHERES
   sphere sphere0;
   sphere0.mtrl.color = vec3(0.5, 1.0, 0.5);
-  sphere0.mtrl.kSpec = 0.2;
-  sphere0.mtrl.kLocal = 1.0;
+  sphere0.mtrl.kSpec = 0.5;
+  sphere0.mtrl.kLocal = 0.3;
+  sphere0.mtrl.ior = 1.5;
   sphere0.radius = 2.0;
   sphere0.position = vec3(0,0,-7.5);
   sphere0.position.x = -1.0 + myFloat1;
   sphere0.position.y = -1.0 + myFloat2;
+  sphere0.is_refractive=true;
 
   sphere sphere1;
   sphere1.mtrl.color = vec3(1.0, 1.0, 1.0);
   sphere1.mtrl.kSpec = 0.4;
-  sphere1.mtrl.kLocal = 0.6;
+  sphere1.mtrl.kLocal = 0.5;
+  sphere1.mtrl.ior = 1.5;
+
   sphere1.radius = 1.0;
   sphere1.position = vec3(3,1,-8);
 
+  sphere1.is_refractive=true;
+
+  // sphere1.position.x =  myFloat1;
+  // sphere1.position.y =  myFloat2;
+
   sphere sphere2;
   sphere2.mtrl.color = vec3(1.0, 0.0, 0.0);
-  sphere2.mtrl.kSpec = 0.0;
-  sphere2.mtrl.kLocal = 1.0;
+  sphere2.mtrl.kSpec = 0.4;
+  sphere2.mtrl.kLocal = 0.6;
   sphere2.radius = 1.0;
   sphere2.position = vec3(0,3,-8);
+  sphere0.is_refractive=false;
+
+  // sphere2.position.x = -0.5 + myFloat1;
+  // sphere2.position.y = -0.5 + myFloat2;
 
   scene_spheres[0] = sphere0;
   scene_spheres[1] = sphere1;
@@ -286,7 +385,6 @@ void main()
   vec2 uv = (-1.0 + 2.0*gl_FragCoord.xy / resolution.xy) * vec2(resolution.x/resolution.y, 1.0);
   pixelRay.origin = vec3(0,0,0);                        // ray starts at eye:  origin
   pixelRay.direction = normalize(vec3(0.5*uv,-1.0));    // look in the direction of a given pixel
-
 
   vec3 rayColor = rayCast(pixelRay);            // cast the initial ray
   gl_FragColor = vec4(rayColor, 1.0);           // assign color to fragment
