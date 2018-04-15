@@ -387,7 +387,7 @@ void main()
   pixelRay.origin = vec3(0,0,0);                        // ray starts at eye:  origin
   pixelRay.direction = normalize(vec3(0.5*uv,-1.0));    // look in the direction of a given pixel
 
-  vec3 rayColor = rayCast(pixelRay);            // cast the initial ray
+  vec3 rayColor =rayCast(pixelRay);            // cast the initial ray
   gl_FragColor = vec4(rayColor, 1.0);           // assign color to fragment
 }
 </script>
