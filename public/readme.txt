@@ -1,5 +1,3 @@
-Carlos Balladares
-53443123
 
 This scene has:
   - Ray tracing with 5 bounces (iterative! no raytrace2)
